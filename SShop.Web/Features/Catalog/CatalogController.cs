@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SShop.Web.Data;
 using SShop.Web.Data.Catalog.Models;
+using SShop.Web.Data.Entities;
 using SShop.Web.Features.Base;
 using System;
 using System.Collections.Generic;
@@ -79,13 +80,11 @@ namespace SShop.Web.Features.Catalog
             {
                 return BadRequest();
             }
-
             var item = await _catalogContext.CatalogItems.SingleOrDefaultAsync(ci => ci.Id == id);
             if (item != null)
             {
                 return item;
             }
-
             return NotFound();
         }
 
@@ -109,16 +108,11 @@ namespace SShop.Web.Features.Catalog
         [HttpGet]
         [Route("items/type/{catalogTypeId}/brand/{catalogBrandId:int?}")]
         [ProducesResponseType(typeof(PaginatedItemsViewModel<CatalogItem>), (int)HttpStatusCode.OK)]
-        public async Task<ActionResult<PaginatedItemsViewModel<CatalogItem>>> ItemsByTypeIdAndBrandIdAsync(int catalogTypeId, int? catalogBrandId, [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0)
+        public async Task<ActionResult<PaginatedItemsViewModel<CatalogItem>>> ItemsByTypeIdAsync(int catalogTypeId,  [FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0)
         {
             var root = (IQueryable<CatalogItem>)_catalogContext.CatalogItems;
 
             root = root.Where(ci => ci.CatalogTypeId == catalogTypeId);
-
-            if (catalogBrandId.HasValue)
-            {
-                root = root.Where(ci => ci.CatalogBrandId == catalogBrandId);
-            }
 
             var totalItems = await root
                 .LongCountAsync();
@@ -127,13 +121,9 @@ namespace SShop.Web.Features.Catalog
                 .Skip(pageSize * pageIndex)
                 .Take(pageSize)
                 .ToListAsync();
-
-            itemsOnPage = ChangeUriPlaceholder(itemsOnPage);
-
             return new PaginatedItemsViewModel<CatalogItem>(pageIndex, pageSize, totalItems, itemsOnPage);
         }
 
-        // GET api/v1/[controller]/CatalogTypes
         [HttpGet]
         [Route("catalogtypes")]
         [ProducesResponseType(typeof(List<CatalogType>), (int)HttpStatusCode.OK)]
@@ -142,16 +132,7 @@ namespace SShop.Web.Features.Catalog
             return await _catalogContext.CatalogTypes.ToListAsync();
         }
 
-        // GET api/v1/[controller]/CatalogBrands
-        [HttpGet]
-        [Route("catalogbrands")]
-        [ProducesResponseType(typeof(List<CatalogBrand>), (int)HttpStatusCode.OK)]
-        public async Task<ActionResult<List<CatalogBrand>>> CatalogBrandsAsync()
-        {
-            return await _catalogContext.CatalogBrands.ToListAsync();
-        }
-
-        //PUT api/v1/[controller]/items
+        
         [Route("items")]
         [HttpPut]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
@@ -191,7 +172,6 @@ namespace SShop.Web.Features.Catalog
             return CreatedAtAction(nameof(ItemByIdAsync), new { id = productToUpdate.Id }, null);
         }
 
-        //POST api/v1/[controller]/items
         [Route("items")]
         [HttpPost]
         [ProducesResponseType((int)HttpStatusCode.Created)]
@@ -211,7 +191,6 @@ namespace SShop.Web.Features.Catalog
             return CreatedAtAction(nameof(ItemByIdAsync), new { id = item.Id }, null);
         }
 
-        //DELETE api/v1/[controller]/id
         [Route("{id}")]
         [HttpDelete]
         [ProducesResponseType((int)HttpStatusCode.NoContent)]

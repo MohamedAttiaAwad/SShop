@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SShop.Web.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +20,14 @@ namespace SShop.Web
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services
+                .AddDatabase(Configuration)
+                .AddApplicationServices()
+                .AddSwagger()
+                .AddAutoMapperSetup()
+                .AddApiControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -30,22 +35,21 @@ namespace SShop.Web
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
+                app.UseDeveloperExceptionPage()
+                .UseSwaggerUI();
             }
 
-            app.UseStaticFiles();
-
+            app.UseHttpsRedirection();
             app.UseRouting();
-
-            app.UseAuthorization();
+            app.UseCors(options =>
+                               options.AllowCredentials()
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod()
+                                      .WithOrigins("http://localhost:4200")); 
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
+                endpoints.MapControllers();
             });
         }
     }
